@@ -46,7 +46,10 @@ const sampleUsers = [
     password: 'password123',
     bio: '☕ Open Source Maintainer & Coffee addict. Love Vite, React 18, and MongoDB indexing.',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=jordan_code',
-  export async function seedDatabase(force = false) {
+  },
+];
+
+export async function seedDatabase(force = false) {
   console.log('🌱 Checking database seeding status...');
 
   const hashedPassword = await bcrypt.hash('password123', 10);
@@ -195,6 +198,4 @@ if (process.argv[1] && process.argv[1].endsWith('seed.js')) {
     console.error('❌ Seeding failed:', err);
     process.exit(1);
   });
-}ding failed:', err);
-  process.exit(1);
-});
+}
