@@ -56,9 +56,9 @@ export async function seedDatabase(force = false) {
   const isMongoConnected = mongoose.connection.readyState === 1;
 
   if (isMongoConnected) {
-    const userCount = await User.countDocuments();
-    if (!force && userCount > 0) {
-      console.log('🍃 MongoDB already populated.');
+    const alexExists = await User.findOne({ email: 'alex@example.com' });
+    if (!force && alexExists) {
+      console.log('🍃 MongoDB sample users already populated.');
       return;
     }
 
@@ -131,8 +131,8 @@ export async function seedDatabase(force = false) {
     const db = new Low(adapter, { users: [], posts: [], notifications: [] });
     await db.read();
 
-    if (!force && db.data?.users && db.data.users.length > 0) {
-      console.log('📦 LowDB already populated.');
+    if (!force && db.data?.users && db.data.users.some(u => u.email === 'alex@example.com')) {
+      console.log('📦 LowDB sample users already populated.');
       return;
     }
 
