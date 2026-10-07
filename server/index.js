@@ -10,6 +10,7 @@ import authRoutes from './routes/auth.js';
 import postRoutes from './routes/posts.js';
 import userRoutes from './routes/users.js';
 import uploadRoutes from './routes/upload.js';
+import { seedDatabase } from './seed.js';
 
 dotenv.config();
 
@@ -26,6 +27,9 @@ export const db = new Low(adapter, defaultData);
 await db.read();
 db.data ||= defaultData;
 await db.write();
+
+// Auto-seed database if empty
+await seedDatabase();
 
 const allowedOrigins = ['http://localhost:5173', 'http://127.0.0.1:5173', process.env.CLIENT_URL].filter(Boolean);
 app.use(cors({ origin: allowedOrigins.length === 1 && allowedOrigins[0] === '*' ? '*' : allowedOrigins, credentials: true }));

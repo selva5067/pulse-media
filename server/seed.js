@@ -46,29 +46,24 @@ const sampleUsers = [
     password: 'password123',
     bio: '☕ Open Source Maintainer & Coffee addict. Love Vite, React 18, and MongoDB indexing.',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=jordan_code',
-  },
-];
-
-async function seed() {
-  console.log('🌱 Starting database seeding process...');
-
-  const mongoURI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/pulse_social';
-  let isMongoConnected = false;
-
-  try {
-    await mongoose.connect(mongoURI, { serverSelectionTimeoutMS: 2000 });
-    isMongoConnected = true;
-    console.log('🍃 Connected to MongoDB for seeding.');
-  } catch {
-    console.log('⚠️ MongoDB not available. Seeding LowDB local database file...');
-  }
+  export async function seedDatabase(force = false) {
+  console.log('🌱 Checking database seeding status...');
 
   const hashedPassword = await bcrypt.hash('password123', 10);
+  const isMongoConnected = mongoose.connection.readyState === 1;
 
   if (isMongoConnected) {
-    await User.deleteMany({});
-    await Post.deleteMany({});
-    await Notification.deleteMany({});
+    const userCount = await User.countDocuments();
+    if (!force && userCount > 0) {
+      console.log('🍃 MongoDB already populated.');
+      return;
+    }
+
+    if (force) {
+      await User.deleteMany({});
+      await Post.deleteMany({});
+      await Notification.deleteMany({});
+    }
 
     const createdUsers = [];
     for (const u of sampleUsers) {
@@ -105,7 +100,7 @@ async function seed() {
 
     const post2 = new Post({
       author: createdUsers[1]._id,
-      content: '✨ UI Tip of the day: When designing dark mode interfaces, prefer high contrast slate backgrounds over pure pitch black (#000000) for reduce eye fatigue!',
+      content: '✨ UI Tip of the day: When designing dark mode interfaces, prefer high contrast slate backgrounds over pure pitch black (#000000) to reduce eye fatigue!',
       image: 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=800&q=80',
       likes: [createdUsers[0]._id, createdUsers[3]._id],
       comments: [
@@ -126,13 +121,17 @@ async function seed() {
     await post3.save();
 
     console.log('✅ MongoDB Seed completed successfully with demo users and posts!');
-    process.exit(0);
   } else {
     // LowDB Seeding
     const dbPath = join(__dirname, 'db.json');
     const adapter = new JSONFile(dbPath);
     const db = new Low(adapter, { users: [], posts: [], notifications: [] });
     await db.read();
+
+    if (!force && db.data?.users && db.data.users.length > 0) {
+      console.log('📦 LowDB already populated.');
+      return;
+    }
 
     const lowUsers = sampleUsers.map(u => ({
       id: uuid(),
@@ -188,11 +187,14 @@ async function seed() {
     await db.write();
 
     console.log('✅ LowDB Seed completed successfully!');
-    process.exit(0);
   }
 }
 
-seed().catch(err => {
-  console.error('❌ Seeding failed:', err);
+if (process.argv[1] && process.argv[1].endsWith('seed.js')) {
+  seedDatabase(true).then(() => process.exit(0)).catch(err => {
+    console.error('❌ Seeding failed:', err);
+    process.exit(1);
+  });
+}ding failed:', err);
   process.exit(1);
 });
